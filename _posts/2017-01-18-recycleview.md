@@ -75,6 +75,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder>{
 ### RecyclerView.LayoutManager
 
 - LinearLayoutManager 垂直或者水平的Item视图。
+
 ```java
 LinearLayoutManager layoutManager = new LinearLayoutManager(this);
 layoutManager.setOrientation(LinearLayoutManager.VERTICAL);//垂直
@@ -83,12 +84,14 @@ recyclerView.setLayoutManager(layoutManager);
 ```
 
 - GridLayoutManager 网格Item视图
+
 ```java
 GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);
 recyclerView.setLayoutManager(gridLayoutManager);
 ```
 
 - StaggeredGridLayoutManager 交错的网格Item视图(瀑布流)。
+
 ```java
 StaggeredGridLayoutManager staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,StaggeredGridLayoutManager.VERTICAL);
 recyclerView.setLayoutManager(staggeredGridLayoutManager);
