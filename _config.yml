@@ -61,7 +61,7 @@ duoshuo_share: true                     # set to false if you want to use Commen
 # Baidu Analytics
 ba_track_id: 8aa8b55a9ac51c75ad9ff9acf1c1e2bb
 # Google Analytics
-ga_track_id: 'UA-49627206-1'            # Format: UA-xxxxxx-xx
+ga_track_id: 'UA-90593049-1'            # Format: UA-xxxxxx-xx
 ga_domain: princebb.cn
 
 
