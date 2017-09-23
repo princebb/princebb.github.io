@@ -5,6 +5,8 @@ subtitle:   "Recycleview Introduce"
 date:       2017-01-18
 author:     "Allen"
 header-img: "img/code-bg.jpg"
+header-mask: 0.3
+catalog:    true
 tags:
     - Android
 ---
