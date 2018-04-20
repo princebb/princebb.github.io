@@ -48,7 +48,11 @@ kramdown:
 
 
 # Disqus settings
-disqus_username: hux
+#disqus_username: hux
+
+# Support for LiveRe comments system.
+# You can get your uid from https://livere.com/insight/myCode (General web site)
+livere_uid: MTAyMC8zMDE0Ny82NzAy
 
 # Netease setttings
 netease_comment: false
