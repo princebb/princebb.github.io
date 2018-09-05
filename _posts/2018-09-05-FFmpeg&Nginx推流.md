@@ -1,0 +1,178 @@
+---
+layout:     post
+title:      "MAC使用Nginx推送RTMP+HLS直播流"
+subtitle:   "直播流"
+date:       2018-09-05
+author:     "Allen"
+header-img: "img/code-bg.jpg"
+tags:
+    - 直播推流
+---
+
+最近在测试ijk播放器的解码性能等功能，所以搭建了nginx模拟直播推流，在这里，主要讲解rtmp和hls推流方式的环境搭建。笔者采用的是Mac系统，不过Windows也大同小异，就不再单独篇幅进行介绍了。
+
+#### 一、安装Homebrew
+
+Homebrew是mac系统下的一个软件包的管理器，通过使用该工具，能很方便的去安装以及卸载软件。在命令行中执行如下命令即可安装。
+
+```
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+```
+
+#### 二、安装Nginx
+
+Nginx是一个异步框架的 Web服务器，也可以用作反向代理，负载平衡器和 HTTP缓存。
+
+按第一步骤安装完成Homebrew后，可在命令行中使用brew安装nginx。文中使用tap命令添加了第三方的[github项目](https://github.com/denji/homebrew-nginx)。非Mac系统的童鞋可以从[官网](http://nginx.org/)下载安装包进行安装。
+
+```
+brew tap denji/nginx
+brew install nginx-full --with-rtmp-module
+```
+
+笔者在此处安装时遇到一个安装过程中出现一个小问题,报了这样一个错误：
+
+> Error: Could not symlink share/man/man8/nginx.8 /usr/local/share/man/man8 is not writable.
+
+上面告诉我们/usr/local/share/man/man8这个目录对当前用户无写权限，因为我们安装包时经常会对两个目录做操作/usr/local/share、/usr/local/opt，所以我们直接对这2个目录授权，具体命令如下：
+
+```
+sudo chown -R `whoami`:admin /usr/local/share
+sudo chown -R `whoami`:admin /usr/local/opt
+```
+
+执行了该命令后，再重新执行一下`brew link nginx`就可以了。至此，已经安装完成nginx和rtmp模块。
+
+接下来我们来看看如何查看nginx的一些信息，在命令行中执行`brew info nginx-full`。
+
+可以看到nginx的配置文件在/usr/local/etc/nginx/nginx.conf，安装位置在/usr/local/opt/nginx-full/bin/nginx。
+
+> The default port has been set in /usr/local/etc/nginx/nginx.conf to 8080 so that
+> nginx can run without sudo.
+>
+> nginx will load all files in /usr/local/etc/nginx/servers/.
+>
+> - Tips -
+>   Run port 80:
+>     sudo chown root:wheel /usr/local/opt/nginx-full/bin/nginx
+>    ​ sudo chmod u+s /usr/local/opt/nginx-full/bin/nginx
+>   Reload config:
+>     nginx -s reload
+>   Reopen Logfile:
+>    ​ nginx -s reopen
+>   Stop process:
+>     nginx -s stop
+>   Waiting on exit process
+>    ​ nginx -s quit
+>
+> To have launchd start denji/nginx/nginx-full now and restart at login:
+>   brew services start denji/nginx/nginx-full
+> Or, if you don't want/need a background service you can just run:
+>   nginx
+> ➜  ~
+
+最后，在命令行中执行`nginx`启动nginx服务。需要注意的是，执行了该命令后，并没有任何提示输出，需要在浏览器下输入`http://localhost:8080/`进行访问，正常的话会显示welcome欢迎页面。
+
+#### 三、配置nginx.conf
+
+进入到配置文件所在地址/usr/local/etc/nginx/，然后执行`open nginx.conf -a atom`使用atom打开配置文件，没有安装atom的童鞋可以使用其他文本编辑软件。
+
+在http{...}server节点中，需要增加hls的配置，详见标注，此处是为了让客户端可以以http的形式来拉取hls的视频流。
+
+```
+server {
+        listen       8080;
+        server_name  localhost;
+        #charset koi8-r;
+        #access_log  logs/host.access.log  main;
+        location / {
+            root   html;
+            index  index.html index.htm;
+        }
+		#hls配置开始
+        location /hls{
+          types{
+            application/vnd.apple.mpegurl m3u8;
+            video/mp2t ts;
+          }
+          root html;
+          add_header Cache-Control no-cache;
+        }
+        #hls配置结束
+        #error_page  404              /404.html;
+        # redirect server error pages to the static page /50x.html
+        #
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+
+```
+
+在http{…}节点后，添加一个新的rtmp节点，具体代码如下：
+
+```
+rtmp{
+  server{
+    listen 1935;
+    chunk_size 4000;
+    #RTMP 直播流配置
+    application rtmplive{
+      live on;
+      max_connections 1024;
+    }
+    #hls直播流配置
+    application hls{
+      live on;
+      hls on;
+      hls_path /usr/local/var/www/hls;
+      hls_fragment 5s;
+    }
+  }
+}
+```
+
+listen是监听的端口号，chunk_size是流整合的最大的块大小，默认值为 4096，这个值设置的越大 CPU 负载就越小，值不能低于128。live on为开启实时直播，max_connections为最大连接数。hls_path是ts文件的存放位置，hls_fragment为分片包含5秒的视频内容。
+
+文件修改保存后，执行`nginx -s reload`重新加载配置。
+
+#### 四、通过FFmpeg推流
+
+还未安装ffmpeg的童鞋需要在命令行执行安装命令`brew install ffmpeg`。
+
+**1.RTMP推流**
+
+推流方式比较简单，只需要在命令行中输入：
+
+```
+ffmpeg -re -i /Study/Movie/test.ts -vcodec libx264 -acodec aac -f flv rtmp://localhost:1935/rtmplive/rtmp
+```
+
+这个命令的大体意思是使用FFmpeg往后面的那个地址推送视频流信息。需要注意的是 -i 后面是视频的绝对路径，有个比较简单的输入办法就是直接拖拽视频到命令行中就会显示完整的视频路径。
+
+如果正常运行的话，就会出现如下1-1所示内容：
+
+![图1-1 FFmpeg推流](https://ws1.sinaimg.cn/large/0069RVTdgy1fuysm90dn7j30vm0ouwl4.jpg)
+
+此刻我们需要做的是，打开一个能访问网络地址的视频播放器。笔者使用的是vlc万能播放软件，在打开源中输入我们的推流地址，如下图1-2所示。
+
+![图1-2 VLC打开视频源](https://ws1.sinaimg.cn/large/0069RVTdgy1fuysqbej4tj31960swn6m.jpg)
+
+配置正常的话，vlc会进入到网络视频流播放画面，如图1-3所示。
+
+![图1-3 RTMP视频流](https://ws1.sinaimg.cn/large/0069RVTdgy1fuysvr8exlj31cc0ugnbm.jpg)
+
+**2.HLS推流**
+
+hls推流和rtmp相似，只是后面的推流地址改了一下。
+
+```
+ffmpeg -re -i /Study/Movie/test.ts -vcodec libx264 -acodec aac -f flv rtmp://localhost:1935/hls/movie
+```
+
+我们可以直接在safari浏览器中访问`http://localhost:8080/hls/movie.m3u8`，效果如图1-4。
+
+![图1-4 HLS视频流](https://ws1.sinaimg.cn/large/0069RVTdgy1fuyt2jfmy6j31jw0yw4qp.jpg)
+
+至此，FFmpeg+Nginx推流功能介绍完毕。
