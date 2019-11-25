@@ -88,7 +88,7 @@ service-worker: true
 
 
 # Friends
-friends: [
+#friends: [
 #    {
 #        title: "Hux Blog",
 #        href: "http://huangxuan.me"
@@ -105,4 +105,4 @@ friends: [
 #        title: "It helps SEO",
 #        href: "#"
 #    }
-]
+#]
