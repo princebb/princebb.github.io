@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:      "zsh终端配置打开VsCode"
+title:      "配置zsh终端打开VsCode"
 date:       2020-04-06
 author:     "Allen"
 header-img: "img/code-bg.jpg"
