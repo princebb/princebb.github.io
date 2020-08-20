@@ -9,7 +9,7 @@ tags:
 ---
 
 
-近期在flutter_map开源地图插件的基础上实现了一个可拖拽polygon的功能，觉得还是蛮有意思的，故而记录一下。
+近期在[flutter_map](https://github.com/fleaflet/flutter_map)开源地图插件的基础上实现了一个**可拖拽polygon**的功能，觉得还是蛮有意思的，故而记录一下。
 
 先展示一下功能吧
 
@@ -23,7 +23,7 @@ tags:
 
 4.线段若相交，则变红
 
-比较郁闷的是flutter_map(0.10.1+1)并没有提供可进行拖拽的marker，所以，为实现这个功能，我们需要先扩展一个drag_marker类，因为是保密类项目，所以只能说下大概的过程，代码细节等可以参考flutter_map的其它组件的实现。将marker用手势进行包裹，然后实现onPanDown,onPanEnd,OnTap事件。在这里使用了Listener，原因是因为flutter_map内部实现了LongPress的监听，但是并没有对使用者暴露关闭的开关，所以当我们手指在marker上按下后并停留一会儿，再在marker上移动的话，并不会接收到move事件，因为事件会向上冒泡被flutter_map消费掉，所以为了解决这个问题，包裹了原始事件Listerner，对move进行监听。
+比较郁闷的是flutter_map(0.10.1+1)并没有提供可进行拖拽的marker，所以，为实现这个功能，我们需要先扩展一个**drag_marker**类，因为是保密类项目，所以只能说下大概的过程，代码细节等可以参考flutter_map的其它组件的实现。将marker用手势进行包裹，然后实现onPanDown,onPanEnd,OnTap事件。在这里使用了**Listener**，原因是因为flutter_map内部实现了LongPress的监听，但是并没有对使用者暴露关闭的开关，所以当我们手指在marker上按下后并停留一会儿，再在marker上移动的话，并不会接收到move事件，因为事件会向上冒泡被flutter_map消费掉，所以为了解决这个问题，包裹了原始事件Listerner，对move进行监听。
 
 ```dart
 Listener(
@@ -64,7 +64,7 @@ marker扩展写好后，其它的功能也就水到渠成了，通过监听marke
 
 如果point的点数小于3个，是不需要处理相交的。一个细节需要注意下，因为之前闭合时，为了让收尾相连，所以多添加了一个first点，在相交判断时，需要拷贝一个新的list，并removeLast()。
 
-相交算法使用的是网上的快速排斥实验以及跨立实验。
+相交算法使用的是网上的**快速排斥实验**以及**跨立实验**。
 
-我们整个项目使用Bloc进行状态的全局管理，所以当线段相交时，通知到widget中，改变Polyline(flutter_map自带widget)的线段颜色。
+我们整个项目使用[Bloc](https://github.com/felangel/bloc/tree/master/packages/flutter_bloc)进行状态的全局管理，所以当线段相交时，通知到widget中，改变Polyline(flutter_map自带widget)的线段颜色。
 
